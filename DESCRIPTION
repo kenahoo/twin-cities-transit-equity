@@ -1,0 +1,16 @@
+Package: tctransitequity
+Title: Twin Cities Transit Access & Equity
+Version: 0.0.0
+Description: A reproducible analysis pairing Metro Transit service with
+    census-tract demographics across the seven-county Twin Cities metro.
+Encoding: UTF-8
+Imports:
+    import,
+    sf,
+    tidycensus,
+    tigris,
+    tidytransit,
+    ggplot2 (>= 3.5.0),
+    patchwork,
+    scales,
+    dplyr
