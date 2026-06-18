@@ -6,6 +6,7 @@
 
 import::from(sf, st_transform, st_buffer, st_join, st_drop_geometry, st_within)
 import::from(tidycensus, get_acs)
+import::from(tigris, area_water)
 import::from(tidytransit, read_gtfs, filter_feed_by_date,
              get_stop_frequency, stops_as_sf)
 import::from(dplyr, inner_join, left_join, mutate, group_by, summarise, coalesce, filter)
@@ -77,6 +78,15 @@ analysis <- acs |>
   filter(hh_totalE > 0, populationE > 0)
 
 saveRDS(analysis, "data/analysis.rds")
+
+# ---- 4. Larger lakes & rivers (map orientation) -----------------------------
+# TIGER/Line area-water polygons, one county at a time, then keep the big ones.
+water <- do.call(rbind, lapply(metro_counties, function(co)
+  area_water("MN", co, year = acs_year))) |>
+  st_transform(metric_crs)
+
+lakes <- filter(water, AWATER > 1e6)   # keep water bodies larger than 1 sq km
+saveRDS(lakes, "data/lakes.rds")
 
 # ---- Quick look (so we can decide how to visualize) -------------------------
 cat("\nTracts (residential):", nrow(analysis), "\n")
