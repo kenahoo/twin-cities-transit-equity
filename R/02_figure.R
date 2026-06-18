@@ -24,13 +24,13 @@ supply_cut <- median(analysis$departures, na.rm = TRUE)
 analysis <- analysis |>
   mutate(
     gap   = pct_no_vehicle >= need_cut & departures < supply_cut,
-    group = factor(if_else(gap, "High need, low service", "Other tracts"),
-                   levels = c("High need, low service", "Other tracts"))
+    group = factor(if_else(gap, "High need, low service tracts", "Other tracts"),
+                   levels = c("High need, low service tracts", "Other tracts"))
   ) |>
   arrange(gap)   # draw the highlighted tracts last (on top)
 
 # palette: orange for the gap tracts, neutral grey otherwise
-pal <- c("High need, low service" = "#E8702A", "Other tracts" = "#C9C9C9")
+pal <- c("High need, low service tracts" = "#E8702A", "Other tracts" = "#C9C9C9")
 
 # ---- Panel A: the relationship (scatter) ------------------------------------
 pA <- ggplot(st_drop_geometry(analysis),
