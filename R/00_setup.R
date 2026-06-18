@@ -11,6 +11,8 @@ required <- c(
   "tigris",      # TIGER/Line tract boundaries
   "tidytransit", # read GTFS feeds
   "ggplot2",     # plotting
+  "patchwork",   # compose multi-panel figures
+  "scales",      # axis label formatting
   "dplyr"        # data wrangling
 )
 
