@@ -7,6 +7,7 @@
 import::from(sf, st_drop_geometry)
 import::from(dplyr, mutate, arrange, if_else, group_by, summarise)
 import::from(ggplot2, ggplot, aes, geom_point, geom_smooth, geom_sf,
+             geom_hline, geom_vline, annotate,
              scale_color_manual, scale_fill_manual, scale_y_continuous,
              labs, theme_minimal, theme, element_text, element_blank,
              coord_sf, ggsave)
@@ -34,18 +35,28 @@ pal <- c("High need, low service" = "#E8702A", "Other tracts" = "#C9C9C9")
 # ---- Panel A: the relationship (scatter) ------------------------------------
 pA <- ggplot(st_drop_geometry(analysis),
              aes(pct_no_vehicle, departures, color = group)) +
+  geom_point(size = 1.6, alpha = 0.75) +
   geom_smooth(aes(group = 1), method = "lm", se = FALSE,
               color = "grey35", linewidth = 0.6, linetype = "dashed") +
-  geom_point(size = 1.6, alpha = 0.75) +
   scale_color_manual(values = pal, name = NULL) +
   scale_y_continuous(labels = label_comma()) +
+  geom_hline(yintercept = supply_cut, color = "#6A994E") +
+  annotate("text", x = max(analysis$pct_no_vehicle) - 8, y = supply_cut,
+           label = "Median departures", color = "#6A994E",
+           hjust = 1, vjust = -0.6, size = 3) +
+  geom_vline(xintercept = need_cut, color = "#6A994E") +
+  annotate("text", y = max(analysis$departures), x = need_cut,
+           label = "75th-percentile need", color = "#6A994E",
+           hjust = 1, vjust = -0.6, size = 3, angle = 90) +
   labs(
     title = "Service rises with need, but loosely",
     x = "Households without a vehicle (%)",
     y = "Weekday departures within a 1/4-mile walk"
   ) +
   theme_minimal(base_size = 11) +
-  theme(legend.position = "top",
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.98, 0.98),
+        legend.justification = c(1, 1),   # anchor legend's top-right at that point
         plot.title = element_text(face = "bold"))
 
 # county outlines: union the tracts (GEOID = state+county+tract) by county
