@@ -8,7 +8,7 @@ import::from(sf, st_drop_geometry)
 import::from(dplyr, mutate, arrange, if_else, group_by, summarise)
 import::from(ggplot2, ggplot, aes, geom_point, geom_smooth, geom_sf,
              geom_hline, geom_vline, annotate,
-             scale_color_manual, scale_fill_manual, scale_y_continuous,
+             scale_color_manual, scale_fill_manual, scale_y_sqrt,
              labs, theme_minimal, theme, element_text, element_blank,
              coord_sf, ggsave)
 import::from(patchwork, wrap_plots, plot_annotation)
@@ -39,7 +39,8 @@ pA <- ggplot(st_drop_geometry(analysis),
   geom_smooth(aes(group = 1), method = "lm", se = FALSE,
               color = "grey35", linewidth = 0.6, linetype = "dashed") +
   scale_color_manual(values = pal, name = NULL) +
-  scale_y_continuous(labels = label_comma()) +
+  scale_y_sqrt(labels = label_comma(),
+               breaks = c(0, 500, 2000, 5000, 10000, 15000)) +
   geom_hline(yintercept = supply_cut, color = "#6A994E") +
   annotate("text", x = max(analysis$pct_no_vehicle) - 8, y = supply_cut,
            label = "Median departures", color = "#6A994E",
