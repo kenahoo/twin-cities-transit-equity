@@ -9,13 +9,19 @@ schedule (how much service is within walking distance of each neighborhood);
 "need" is measured from Census demographics (households without a vehicle,
 income, and related indicators).
 
+"Within walking distance" is measured at each block group's
+*population-weighted center* (so access reflects where residents actually live,
+not anywhere inside a large polygon), at census **block-group** resolution.
+
 ## Data sources (all public)
 
 - **Metro Transit GTFS** — published transit schedule (stops, routes, trip
   frequency). https://www.metrotransit.org/
-- **American Community Survey (ACS)** 5-year estimates, census-tract level, via
-  the U.S. Census Bureau API (`tidycensus` package).
-- **Tract boundaries** for the seven-county metro, via `tigris`.
+- **American Community Survey (ACS)** 5-year estimates, census block-group
+  level, via the U.S. Census Bureau API (`tidycensus` package).
+- **2020 Census population-weighted block-group centers** (CenPop2020) — the
+  "where people live" points used to measure walking access.
+- **Block-group boundaries** for the seven-county metro, via `tigris`.
 
 ## Reproducing
 

@@ -13,6 +13,7 @@ import::from(ggplot2, ggplot, aes, geom_point, geom_smooth, geom_sf,
              coord_sf, ggsave)
 import::from(patchwork, wrap_plots, plot_annotation)
 import::from(scales, label_comma)
+import::from(grid, unit)
 
 analysis <- readRDS("data/analysis.rds")
 lakes    <- readRDS("data/lakes.rds")
@@ -24,13 +25,13 @@ supply_cut <- median(analysis$departures, na.rm = TRUE)
 analysis <- analysis |>
   mutate(
     gap   = pct_no_vehicle >= need_cut & departures < supply_cut,
-    group = factor(if_else(gap, "High need, low service tracts", "Other tracts"),
-                   levels = c("High need, low service tracts", "Other tracts"))
+    group = factor(if_else(gap, "High need, low service", "Other block groups"),
+                   levels = c("High need, low service", "Other block groups"))
   ) |>
-  arrange(gap)   # draw the highlighted tracts last (on top)
+  arrange(gap)   # draw the highlighted block groups last (on top)
 
-# palette: orange for the gap tracts, neutral grey otherwise
-pal <- c("High need, low service tracts" = "#E8702A", "Other tracts" = "#C9C9C9")
+# palette: orange for the gap block groups, neutral grey otherwise
+pal <- c("High need, low service" = "#E8702A", "Other block groups" = "#C9C9C9")
 
 # ---- Panel A: the relationship (scatter) ------------------------------------
 pA <- ggplot(st_drop_geometry(analysis),
@@ -52,12 +53,14 @@ pA <- ggplot(st_drop_geometry(analysis),
   labs(
     title = "Service rises with need, but loosely",
     x = "Households without a vehicle (%)",
-    y = "Weekday departures within a 1/4-mile walk"
+    y = "Weekday departures within a 1/2-mile walk of residents"
   ) +
   theme_minimal(base_size = 11) +
   theme(legend.position = "inside",
         legend.position.inside = c(0.98, 0.98),
         legend.justification = c(1, 1),   # anchor legend's top-right at that point
+        legend.key.spacing.y = unit(0, "pt"),   # gap between the key boxes
+        legend.key.height = unit(0.7, "lines"),  # shrink each box to pull rows together
         plot.title = element_text(face = "bold"))
 
 # county outlines: union the tracts (GEOID = state+county+tract) by county
@@ -72,7 +75,7 @@ pB <- ggplot() +
   geom_sf(data = lakes, fill = "#5bf", color = NA) +
   geom_sf(data = counties, fill = NA, color = "grey30", linewidth = 0.1) +
   scale_fill_manual(values = pal, name = NULL) +
-  labs(title = "High-need, under-served tracts") +
+  labs(title = "High-need, under-served block groups") +
   coord_sf(datum = NA) +
   theme_minimal(base_size = 11) +
   theme(axis.text = element_blank(),
@@ -86,9 +89,11 @@ fig <- wrap_plots(pA, pB, nrow = 1) +
     title = "Does Twin Cities transit reach the households that depend on it?",
     caption = paste0(
       "Sources: Metro Transit / Metropolitan Council GTFS (weekday service); ",
-      "U.S. Census Bureau ACS 5-year (2019–2023). Seven-county metro, census-tract level.\n",
-      '"Need" = share of households with no vehicle; ',
-      '"service" = weekday departures reachable within a 1/4-mile walk.'
+      "U.S. Census Bureau ACS 5-year (2019–2023)\n",
+      "and 2020 population-weighted block-group centers. Seven-county metro, ",
+      "census block-group level.\n",
+      '"Need" = share of households with no vehicle; "service" = weekday departures ',
+      "reachable within a 1/2-mile walk of the block group's population center."
     ),
     theme = theme(
       plot.title   = element_text(face = "bold", size = 14),
@@ -101,12 +106,15 @@ cat("Wrote output/transit-equity.pdf\n")
 
 # Assumptions:
 #  - "Frequency of service" is our measure of transportation access.  This assumes that once
-#    you get on a bus/train, you can get anywhere you need to go, efficiently.  There are likely places
+#    you get on a bus/train,  you can get anywhere you need to go, efficiently.  There are likely places
 #    where this isn't the case.
 #
 # Questions:
 #  - What does "within a 1/4−mile walk" mean for an entire census tract?  They are way bigger than 1/4 mile typically.
+#    Addressed: we now work at block-group resolution and measure access at each block group's
+#    POPULATION-WEIGHTED center (Census CenPop2020), so "within 1/4 mile" reflects where people
+#    actually live rather than anywhere inside a large polygon.  See R/01_get_data.R.
 #
 # Conclusions:
-#  - The under-served tracts are very spread out, and none are in the city centers.  Solving this need
-#    might be difficult
+#  - The under-served block groups are very spread out, and none are in the city centers.  Solving this
+#    need might be difficult
