@@ -8,9 +8,10 @@ import::from(sf, st_drop_geometry)
 import::from(dplyr, mutate, arrange, if_else, group_by, summarise)
 import::from(ggplot2, ggplot, aes, geom_point, geom_smooth, geom_sf,
              geom_hline, geom_vline, annotate,
-             scale_color_manual, scale_fill_manual, scale_y_sqrt,
+             scale_color_manual, scale_fill_manual, scale_fill_fermenter,
+             scale_y_sqrt,
              labs, theme_minimal, theme, element_text, element_blank,
-             coord_sf, ggsave)
+             coord_sf)
 import::from(patchwork, wrap_plots, plot_annotation)
 import::from(scales, label_comma)
 import::from(grid, unit)
@@ -83,8 +84,8 @@ pB <- ggplot() +
         legend.position = "none",
         plot.title = element_text(face = "bold"))
 
-# ---- Compose + caption ------------------------------------------------------
-fig <- wrap_plots(pA, pB, nrow = 1) +
+# ---- Page 1: compose the relationship + gap map -----------------------------
+page1 <- wrap_plots(pA, pB, nrow = 1) +
   plot_annotation(
     title = "Does Twin Cities transit reach the households that depend on it?",
     caption = paste0(
@@ -101,8 +102,58 @@ fig <- wrap_plots(pA, pB, nrow = 1) +
     )
   )
 
-ggsave("output/transit-equity.pdf", fig, width = 10, height = 5.4)
-cat("Wrote output/transit-equity.pdf\n")
+# ---- Page 2: each measure on its own choropleth -----------------------------
+# Shared base layers (lakes + county outlines + stripped-down map theme) so the
+# two single-variable maps match. Binned (fermenter) fills keep the skewed
+# distributions legible and give a clean class legend for a static PDF.
+add_base <- function(p)
+  p +
+    geom_sf(data = lakes,    fill = "#5bf", color = NA) +
+    geom_sf(data = counties, fill = NA, color = "grey30", linewidth = 0.1) +
+    coord_sf(datum = NA) +
+    theme_minimal(base_size = 11) +
+    theme(axis.text   = element_blank(),
+          panel.grid  = element_blank(),
+          plot.title  = element_text(face = "bold"))
+
+need_map <- add_base(
+  ggplot() +
+    geom_sf(data = analysis, aes(fill = pct_no_vehicle), color = NA) +
+    scale_fill_fermenter(palette = "YlOrRd", direction = 1,
+                         breaks = c(5, 10, 15, 20, 30),
+                         name = "No-vehicle\nhouseholds (%)") +
+    labs(title = "Need: households without a vehicle")
+)
+
+supply_map <- add_base(
+  ggplot() +
+    geom_sf(data = analysis, aes(fill = departures), color = NA) +
+    scale_fill_fermenter(palette = "Greens", direction = 1,
+                         breaks = c(1, 100, 500, 2000, 5000),
+                         name = "Weekday\ndepartures") +
+    labs(title = "Service: weekday departures nearby")
+)
+
+page2 <- wrap_plots(need_map, supply_map, nrow = 1) +
+  plot_annotation(
+    title = "The two measures on their own: need, and service",
+    caption = paste0(
+      "Same data and definitions as the preceding page. Seven-county Twin ",
+      "Cities metro, census block groups.\nService is weekday departures ",
+      "reachable within a 1/2-mile walk of each block group's population center."
+    ),
+    theme = theme(
+      plot.title   = element_text(face = "bold", size = 14),
+      plot.caption = element_text(color = "grey40", hjust = 0)
+    )
+  )
+
+# ---- Write a two-page PDF ---------------------------------------------------
+pdf("output/transit-equity.pdf", width = 10, height = 5.4)
+print(page1)
+print(page2)
+dev.off()
+cat("Wrote output/transit-equity.pdf (2 pages)\n")
 
 # Assumptions:
 #  - "Frequency of service" is our measure of transportation access.  This assumes that once
